@@ -206,6 +206,16 @@ section{position:relative;padding:118px 0;z-index:1}
 .sec-head h2{font-size:clamp(46px,6.4vw,88px)}
 .sec-head p{max-width:430px;color:var(--chrome);font-size:15px}
 
+/* ===== youtube layer in the video player ===== */
+.ytwrap{display:none;position:absolute;inset:0;background:#000}
+.ytwrap iframe{width:100%;height:100%;border:0;display:block}
+.vframe.ytmode{aspect-ratio:16/9}
+.vframe.ytmode .badge{display:none}
+.vframe.ytmode .corner{display:none}
+.vframe.ytmode .ytwrap{display:block}
+.vframe.ytmode video,.vframe.ytmode .vcover{display:none}
+section.ytmode #sndBtn{visibility:hidden}
+
 /* ===== game portal ===== */
 #game{background:linear-gradient(180deg,transparent,rgba(6,7,11,.9) 40%,transparent)}
 #screen iframe{background:var(--chromebg);color-scheme:dark;border:0}
@@ -617,6 +627,7 @@ select.fld{appearance:none;background-image:linear-gradient(45deg,transparent 50
       <div class="corner" aria-hidden="true"></div>
       <div class="badge" id="vbadge">ROP 4 — OFFICIAL VISUAL</div>
       <video id="mv" playsinline preload="metadata" controls></video>
+      <div class="ytwrap" id="ytwrap"><iframe id="ytframe" title="Can't Go For It — official video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
       <div class="vcover" id="vcover" role="button" aria-label="Play video" tabindex="0" data-cur="WATCH">
         <img class="vposter" id="vposter" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" aria-hidden="true">
         <div class="playbtn"><svg width="32" height="32" viewBox="0 0 24 24" fill="#F4F4F0"><path d="M8 5v14l11-7z"/></svg></div>
@@ -637,7 +648,7 @@ select.fld{appearance:none;background-image:linear-gradient(45deg,transparent 50
     <div class="strip rv" id="strip" role="listbox" aria-label="Video playlist" tabindex="0"></div>
     <div class="vfoot rv">
       <p>Run the game while the album plays. Post your rank with <b style="color:var(--ice)">#ROP4</b>.</p>
-      <a class="btn" data-magnet data-cur="WATCH" href="https://www.youtube.com/channel/UC00wbhsfrcZAElIw1Q9VRlw" target="_blank" rel="noopener noreferrer">Watch on YouTube ↗</a>
+      <a class="btn" data-magnet data-cur="WATCH" href="https://youtu.be/5SHpv38Vz3I" target="_blank" rel="noopener noreferrer">Watch on YouTube ↗</a>
     </div>
   </div>
 </section>
@@ -930,7 +941,7 @@ const streamingPlatforms = [
 ];
 
 const videos = [
-  { title:"Can't Go For It", desc:"Revamp · Official Visual", type:"local", src:"https://upload.higgsfield.ai/user_36SLpLHo0MVI10STslhM0wOZWEK/43b44897-76b8-440e-8a75-f20236b85e4b.mp4", poster:"https://upload.higgsfield.ai/user_36SLpLHo0MVI10STslhM0wOZWEK/50cf9365-359b-4074-957a-84168899289f.jpg" },
+  { title:"Can't Go For It", desc:"Official Video", type:"youtube", yt:"5SHpv38Vz3I", poster:"https://i.ytimg.com/vi/5SHpv38Vz3I/hqdefault.jpg" },
   { title:"ROP 4",           desc:"Official Visual",          type:"local", src:"https://upload.higgsfield.ai/user_36SLpLHo0MVI10STslhM0wOZWEK/121499fb-f64c-40e6-9898-a1efd434fb21.mp4", poster:"https://upload.higgsfield.ai/user_36SLpLHo0MVI10STslhM0wOZWEK/8692fab4-32b7-490a-9f09-9d6e656ccfb5.png" }
 ];
 
@@ -1004,13 +1015,33 @@ strip.innerHTML = videos.map((v,i) => `
   </button>`).join('');
 
 /* durations without downloading full files */
-videos.forEach((v,i) => { const p = document.createElement('video'); p.preload='metadata'; p.src=v.src;
+videos.forEach((v,i) => { if (!v.src) return; const p = document.createElement('video'); p.preload='metadata'; p.src=v.src;
   p.addEventListener('loadedmetadata', () => { const el = strip.querySelector(`[data-d="${i}"]`); if (el) el.textContent = fmt(p.duration); }); });
 
 function load(i, autoplay){
   vi = (i + videos.length) % videos.length;
   const v = videos[vi];
-  mv.src = v.src; mv.poster = v.poster; vposter.src = v.poster;
+  const stage = mv.parentElement, wrap = document.getElementById('video');
+  if (v.type === 'youtube'){
+    /* Hand the stage to YouTube. Its player owns play/pause/sound, so the
+       custom cover and sound button step aside. The site's audio dock pauses
+       now — we can't hear a play event from inside the iframe. */
+    mv.pause();
+    stage.classList.add('ytmode'); wrap && wrap.classList.add('ytmode');
+    const yt = document.getElementById('ytframe');
+    const url = `https://www.youtube-nocookie.com/embed/${v.yt}?rel=0&playsinline=1${autoplay ? '&autoplay=1' : ''}`;
+    if (yt.dataset.cur !== url){ yt.src = url; yt.dataset.cur = url; }
+    /* Pause the audio dock so it can't play over YouTube. Looked up directly:
+       the `song` const is declared later in this script, so touching it here
+       during the initial load(0) would throw (TDZ) and abort init. */
+    const dockSong = document.getElementById('song');
+    if (dockSong && !dockSong.paused){ dockSong.pause(); try{ syncDock(); }catch(e){} }
+  } else {
+    stage.classList.remove('ytmode'); wrap && wrap.classList.remove('ytmode');
+    const yt = document.getElementById('ytframe');
+    if (yt.dataset.cur){ yt.src = 'about:blank'; yt.dataset.cur = ''; }   /* stop yt audio when leaving */
+    mv.src = v.src; mv.poster = v.poster; vposter.src = v.poster;
+  }
   vt.textContent = v.title; vd.textContent = v.desc; vbadge.textContent = `ROP 4 — ${v.title.toUpperCase()}`;
   strip.querySelectorAll('.vcard').forEach((c,n) => { c.classList.toggle('on', n===vi); c.setAttribute('aria-selected', n===vi); });
   strip.querySelectorAll('.vprog').forEach(p => p.style.width = '0%');
@@ -1018,7 +1049,7 @@ function load(i, autoplay){
      page down to the video section on first load and bury the hero. */
   const card = strip.querySelector(`[data-i="${vi}"]`);
   if (card && inited) strip.scrollTo({ left: card.offsetLeft - (strip.clientWidth - card.clientWidth)/2, behavior:'smooth' });
-  if (autoplay) play(true);
+  if (autoplay && v.type !== 'youtube') play(true);
 }
 function play(userInitiated){
   song.pause(); syncDock();

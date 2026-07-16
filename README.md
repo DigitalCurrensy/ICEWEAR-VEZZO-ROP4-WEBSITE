@@ -25,6 +25,10 @@ redeploy reproduces the site correctly.
 of shipping, and a failed build never takes the live site down (Vercel keeps
 serving the last good deployment).
 
+Those assertions count occurrences with `grep -o | wc -l`, never `grep -c`.
+`grep -c` counts matching *lines*, so three hits sharing two lines reports 2 and
+fails a build that was actually correct. That exact mistake blocked a good deploy.
+
 ## The site
 
 - Hero background video: 568×320 master, blurred + scrimmed as atmosphere.
@@ -32,6 +36,12 @@ serving the last good deployment).
   `src` is set in JS so `prefers-reduced-motion` never downloads it.
 - Game portal: embeds https://blue-cloud-787.higgsfield.gg/ inline on desktop,
   opens in a new tab on touch.
+- "Can't Go For It" plays via the official YouTube video (`5SHpv38Vz3I`), not a
+  hosted file. YouTube's player owns play/sound there, so the site's custom
+  cover and sound button step aside and the audio dock pauses. Switching
+  carousel entries blanks the iframe so its audio can't keep playing.
+- The social row's YouTube icon points at the channel, not the video — it's a
+  follow link. Only the WATCH button deep-links to the video.
 - If a host blocks the embed (chat previews, CMS embeds), the poster and Play
   button are restored rather than leaving a dead frame. The poster is only
   removed once the game proves it loaded.

@@ -1,0 +1,6 @@
+{
+  "buildCommand": "bash build.sh",
+  "outputDirectory": "public",
+  "installCommand": "",
+  "framework": null
+}

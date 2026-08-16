@@ -10,6 +10,7 @@ Live: **https://richoffpints.com**
 | `index.html` | The entire site — single file, no build step, no dependencies |
 | `vercel.json` | Vercel build config. **Must stay in the repo root** (see below) |
 | `build.sh` | Build + content guards |
+| `cms/` | Payload MIT The Drop seat — agents draft, a named human publishes |
 
 ## Deploying
 
@@ -46,6 +47,24 @@ fails a build that was actually correct. That exact mistake blocked a good deplo
   button are restored rather than leaving a dead frame. The poster is only
   removed once the game proves it loaded.
 - No forms, no email capture, no backend, no analytics endpoints.
+
+## The Drop (Payload MIT)
+
+Payload **MIT** is the CMS lock. This repo wraps one collection: `drops`.
+Tina is not started. SMITH, spa, NIL, and Hub stay out. Guard wrap stays in Guard.
+The game stays a game — the wrap does not write `index.html` or `build.sh`.
+
+Agents draft only. A named human must stamp before a drop goes live.
+Missing `PAYLOAD_URL` / `PAYLOAD_TOKEN` fails closed. Live keys stay out of git.
+
+```bash
+python3 cms/payload_wrap.py --draft cms/fixtures/the-drop.draft.json
+python3 cms/payload_wrap.py --approve the-drop --actor-name YOU
+python3 cms/payload_wrap.py --publish the-drop --actor-name YOU
+python3 cms/tests/test_payload_wrap.py
+```
+
+See `cms/CMS_LOCK.md`.
 
 ## Assets
 

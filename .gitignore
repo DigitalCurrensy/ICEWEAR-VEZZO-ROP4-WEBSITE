@@ -2,3 +2,8 @@
 .DS_Store
 node_modules
 public/
+.env
+.env.*
+!.env.example
+*.pem
+*.key

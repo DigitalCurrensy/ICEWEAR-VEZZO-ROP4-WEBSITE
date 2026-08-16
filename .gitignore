@@ -7,3 +7,7 @@ public/
 !.env.example
 *.pem
 *.key
+cms/out/
+cms/queue/
+__pycache__/
+*.pyc
